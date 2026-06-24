@@ -1,0 +1,653 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#10172B">
+<title>Pulse Check — Pronunciation Race</title>
+<style>
+  :root{
+    --bg:#10172B;
+    --surface:#1A2340;
+    --surface-2:#232C4D;
+    --accent:#2DD4C4;
+    --success:#5FD068;
+    --danger:#FF5C5C;
+    --warning:#F2B705;
+    --text:#F4F6FB;
+    --text-muted:#8893B8;
+    --mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+    --sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;height:100%;background:var(--bg);color:var(--text);font-family:var(--sans);overscroll-behavior:none;}
+  body{display:flex;flex-direction:column;min-height:100vh;}
+  button{font-family:inherit;}
+  #app{flex:1;display:flex;flex-direction:column;}
+  .screen{display:none;flex:1;flex-direction:column;padding:20px;max-width:720px;width:100%;margin:0 auto;}
+  .screen.active{display:flex;}
+
+  /* ---------- Setup ---------- */
+  .title{font-size:clamp(28px,6vw,40px);font-weight:800;letter-spacing:-0.02em;margin:8px 0 2px;}
+  .tagline{color:var(--text-muted);margin:0 0 24px;font-size:15px;}
+  .field{margin-bottom:20px;}
+  .field label{display:block;font-size:13px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.04em;margin-bottom:8px;}
+  .toggle-row{display:flex;gap:10px;}
+  .toggle-row label{flex:1;}
+  .toggle-btn{display:block;width:100%;text-align:center;padding:14px 10px;border-radius:12px;border:2px solid var(--surface-2);background:var(--surface);cursor:pointer;font-weight:700;font-size:14px;transition:border-color .15s, background .15s;}
+  input[type=radio]{display:none;}
+  input[type=radio]:checked + .toggle-btn{border-color:var(--accent);background:var(--surface-2);color:var(--accent);}
+  textarea{width:100%;min-height:160px;background:var(--surface);border:2px solid var(--surface-2);border-radius:12px;color:var(--text);padding:14px;font-family:var(--mono);font-size:14px;line-height:1.5;resize:vertical;}
+  textarea:focus{outline:none;border-color:var(--accent);}
+  .hint-text{color:var(--text-muted);font-size:12px;margin-top:6px;line-height:1.5;}
+  .num-row{display:flex;align-items:center;gap:10px;}
+  .round-length-display{font-family:var(--mono);font-size:15px;color:var(--text-muted);padding:10px 0;}
+  .check-row{display:flex;align-items:center;gap:10px;color:var(--text-muted);font-size:14px;}
+  .check-row input{width:18px;height:18px;accent-color:var(--accent);}
+  .start-btn{margin-top:8px;padding:18px;border-radius:14px;border:none;background:var(--accent);color:#0A1020;font-weight:800;font-size:17px;cursor:pointer;}
+  .start-btn:disabled{background:var(--surface-2);color:var(--text-muted);cursor:not-allowed;}
+  .start-btn:not(:disabled):active{transform:scale(0.98);}
+  .warn-banner{background:rgba(255,92,92,.12);border:1px solid var(--danger);color:#FFD3D3;padding:12px 14px;border-radius:10px;font-size:13px;margin-bottom:18px;line-height:1.5;}
+
+  /* ---------- Game ---------- */
+  #game{padding-top:14px;}
+  .game-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;}
+  .end-link{color:var(--text-muted);font-size:13px;background:none;border:none;cursor:pointer;padding:6px;}
+  .hud{display:flex;justify-content:space-between;font-family:var(--mono);font-size:13px;color:var(--text-muted);margin-bottom:10px;}
+  .hud b{color:var(--text);}
+
+  .pulse-wrap{position:relative;height:84px;background:var(--surface);border-radius:14px;overflow:hidden;margin-bottom:18px;}
+  .pulse-wrap svg{width:100%;height:100%;display:block;}
+  .pulse-wrap.spike{animation:spikeBounce .4s ease;}
+  @keyframes spikeBounce{0%{transform:scale(1)}30%{transform:scale(1.03)}100%{transform:scale(1)}}
+  .clock-badge{position:absolute;top:8px;right:10px;font-family:var(--mono);font-size:13px;background:rgba(0,0,0,.35);padding:3px 9px;border-radius:8px;}
+
+  .stage{flex:1;display:flex;align-items:center;justify-content:center;text-align:center;padding:10px 4px;}
+  .target{font-weight:800;letter-spacing:-0.01em;}
+  .target.mode-word{font-size:clamp(34px,9vw,68px);}
+  .target.mode-sentence{font-size:clamp(20px,5vw,32px);line-height:1.4;max-width:95%;}
+
+  .heard-row{text-align:center;margin-bottom:18px;min-height:26px;}
+  .heard-label{color:var(--text-muted);font-size:12px;text-transform:uppercase;letter-spacing:.05em;margin-right:6px;}
+  .heard-text{font-family:var(--mono);font-size:15px;}
+  .heard-text.live{color:var(--accent);}
+  .heard-text.hit{color:var(--success);font-weight:700;}
+  .heard-text.miss{color:var(--danger);}
+  .heard-text.error{color:var(--warning);}
+  .heard-text.idle{color:var(--text-muted);}
+
+  .mic-wrap{display:flex;flex-direction:column;align-items:center;gap:10px;padding-bottom:6px;}
+  .mic-btn{width:clamp(120px,32vw,160px);height:clamp(120px,32vw,160px);border-radius:50%;border:3px solid var(--accent);background:var(--surface-2);display:flex;align-items:center;justify-content:center;font-size:clamp(40px,10vw,56px);cursor:pointer;touch-action:none;user-select:none;-webkit-user-select:none;transition:transform .1s, box-shadow .15s, background .15s;}
+  .mic-btn.active{background:var(--accent);transform:scale(1.06);box-shadow:0 0 0 14px rgba(45,212,196,.15);}
+  .mic-hint{color:var(--text-muted);font-size:13px;text-align:center;}
+  .score-line{text-align:center;font-family:var(--mono);font-size:13px;color:var(--text-muted);margin-top:14px;}
+
+  /* ---------- End screen ---------- */
+  #end{align-items:center;justify-content:center;text-align:center;}
+  .end-title{font-size:clamp(28px,7vw,42px);font-weight:800;margin-bottom:6px;}
+  .end-stats{color:var(--text-muted);font-size:16px;margin-bottom:30px;}
+  .end-btns{display:flex;gap:12px;flex-wrap:wrap;justify-content:center;}
+  .end-btns button{padding:14px 22px;border-radius:12px;font-weight:700;font-size:15px;cursor:pointer;border:2px solid var(--surface-2);background:var(--surface);color:var(--text);}
+  .end-btns button.primary{background:var(--accent);border-color:var(--accent);color:#0A1020;}
+
+  @media (prefers-reduced-motion: reduce){
+    .pulse-wrap.spike{animation:none;}
+    .mic-btn{transition:none;}
+  }
+</style>
+</head>
+<body>
+<div id="app">
+
+  <!-- ===================== SETUP SCREEN ===================== -->
+  <section id="setup" class="screen active">
+    <h1 class="title">Pulse Check</h1>
+    <p class="tagline">Say it clearly enough, and the clock holds its breath.</p>
+
+    <div id="unsupportedWarning" class="warn-banner" style="display:none;">
+      This browser doesn't support speech recognition. Use Chrome, Edge, or Safari (14.5+ on iPhone/iPad). Firefox is not supported.
+    </div>
+
+    <div class="field">
+      <label>Practice mode</label>
+      <div class="toggle-row">
+        <label><input type="radio" name="mode" value="word" checked><span class="toggle-btn">Words</span></label>
+        <label><input type="radio" name="mode" value="sentence"><span class="toggle-btn">Sentences (read-aloud)</span></label>
+      </div>
+    </div>
+
+    <div class="field">
+      <label id="listLabel">Word list</label>
+      <textarea id="listInput" spellcheck="false"></textarea>
+      <div class="hint-text" id="listHint"></div>
+    </div>
+
+    <div class="field">
+      <div class="num-row">
+        <div>
+          <label style="margin-bottom:4px;">Round length</label>
+          <div id="roundLengthDisplay" class="round-length-display"></div>
+        </div>
+        <div class="check-row" style="margin-top:18px;">
+          <input type="checkbox" id="shuffleCheck" checked>
+          <label style="margin:0;text-transform:none;font-size:14px;color:var(--text-muted);">Shuffle order</label>
+        </div>
+      </div>
+    </div>
+
+    <button id="startBtn" class="start-btn">Start round</button>
+  </section>
+
+  <!-- ===================== GAME SCREEN ===================== -->
+  <section id="game" class="screen">
+    <div class="game-top">
+      <button class="end-link" id="quitBtn">✕ End round</button>
+      <span class="end-link" id="modeLabel"></span>
+    </div>
+
+    <div class="hud">
+      <span>Item <b id="progressText">0/0</b></span>
+      <span>Cleared <b id="clearedText">0</b></span>
+    </div>
+
+    <div class="pulse-wrap" id="pulseWrap">
+      <svg viewBox="0 0 1000 120" preserveAspectRatio="none">
+        <path id="pulsePath" fill="none" stroke="#5FD068" stroke-width="5" stroke-linecap="round"/>
+      </svg>
+      <div class="clock-badge" id="clockBadge">1:15</div>
+    </div>
+
+    <div class="stage">
+      <div class="target" id="targetText"></div>
+    </div>
+
+    <div class="heard-row">
+      <span class="heard-label">Heard:</span>
+      <span class="heard-text idle" id="heardText" aria-live="polite">—</span>
+    </div>
+
+    <div class="mic-wrap">
+      <button class="mic-btn" id="micBtn" aria-label="Hold to speak">🎤</button>
+      <div class="mic-hint">Press and hold, say it clearly, then let go</div>
+    </div>
+  </section>
+
+  <!-- ===================== END SCREEN ===================== -->
+  <section id="end" class="screen">
+    <div class="end-title" id="endTitle">Time's up</div>
+    <div class="end-stats" id="endStats"></div>
+    <div class="end-btns">
+      <button id="playAgainBtn" class="primary">Play again</button>
+      <button id="backToSetupBtn">Back to setup</button>
+    </div>
+  </section>
+
+</div>
+
+<script>
+(function(){
+  "use strict";
+
+  /* ============================================================
+     TEACHER CONFIG — edit these two numbers before each class.
+     Every student who loads this page gets the exact same round
+     length, so scores stay comparable when you write them on the
+     board. No UI control for this on purpose.
+     ============================================================ */
+  var CONFIG = {
+    wordRoundSeconds: 75,       // round length when "Words" mode is selected
+    sentenceRoundSeconds: 150   // round length when "Sentences" mode is selected
+  };
+
+  /* ---------------- Sample content ---------------- */
+  var SAMPLE_WORDS =
+"photosynthesis|hard\n" +
+"particularly|hard\n" +
+"comfortable|medium\n" +
+"vegetable|medium\n" +
+"necessary|hard\n" +
+"schedule|hard\n" +
+"library|medium\n" +
+"through|medium\n" +
+"cat|easy\n" +
+"dog|easy";
+
+  var SAMPLE_SENTENCES =
+"Q: What do you usually do on weekends?\n" +
+"A: I usually play soccer with my friends.\n" +
+"Q: What is your favorite subject at school?\n" +
+"A: My favorite subject is English because it is fun.\n" +
+"Q: How do you get to school every day?\n" +
+"A: I get to school by bike every day.";
+
+  /* ---------------- DOM refs ---------------- */
+  var screens = {
+    setup: document.getElementById('setup'),
+    game: document.getElementById('game'),
+    end: document.getElementById('end')
+  };
+  var listInput = document.getElementById('listInput');
+  var listLabel = document.getElementById('listLabel');
+  var listHint = document.getElementById('listHint');
+  var roundLengthDisplay = document.getElementById('roundLengthDisplay');
+  var shuffleCheck = document.getElementById('shuffleCheck');
+  var startBtn = document.getElementById('startBtn');
+  var unsupportedWarning = document.getElementById('unsupportedWarning');
+
+  var quitBtn = document.getElementById('quitBtn');
+  var modeLabel = document.getElementById('modeLabel');
+  var progressText = document.getElementById('progressText');
+  var clearedText = document.getElementById('clearedText');
+  var pulseWrap = document.getElementById('pulseWrap');
+  var pulsePath = document.getElementById('pulsePath');
+  var clockBadge = document.getElementById('clockBadge');
+  var targetText = document.getElementById('targetText');
+  var heardText = document.getElementById('heardText');
+  var micBtn = document.getElementById('micBtn');
+
+  var endTitle = document.getElementById('endTitle');
+  var endStats = document.getElementById('endStats');
+  var playAgainBtn = document.getElementById('playAgainBtn');
+  var backToSetupBtn = document.getElementById('backToSetupBtn');
+
+  var modeRadios = document.querySelectorAll('input[name=mode]');
+
+  /* ---------------- Speech recognition setup ---------------- */
+  var SpeechRecognitionImpl = window.SpeechRecognition || window.webkitSpeechRecognition;
+  var SR_SUPPORTED = !!SpeechRecognitionImpl;
+  var recognition = null;
+  if (SR_SUPPORTED) {
+    recognition = new SpeechRecognitionImpl();
+    recognition.lang = 'en-US';
+    recognition.continuous = false;
+    recognition.interimResults = true;
+    recognition.maxAlternatives = 1;
+  } else {
+    unsupportedWarning.style.display = 'block';
+    startBtn.disabled = true;
+  }
+
+  /* ---------------- Game state ---------------- */
+  var state = {
+    mode: 'word',
+    list: [],
+    index: 0,
+    cleared: 0,
+    totalMs: 75000,
+    remainingMs: 75000,
+    pausedUntil: 0,
+    running: false,
+    listening: false,
+    busy: false
+  };
+  var lastFinalTranscript = '';
+  var tickHandle = null;
+  var watchdogHandle = null;
+
+  /* ---------------- Helpers: matching ---------------- */
+  function normalize(str){
+    return (str || '').toLowerCase().replace(/[^\w\s']/g, '').replace(/\s+/g, ' ').trim();
+  }
+
+  function levenshtein(a, b){
+    var m = a.length, n = b.length;
+    if (m === 0) return n;
+    if (n === 0) return m;
+    var dp = [];
+    for (var i = 0; i <= m; i++){ dp.push(new Array(n+1).fill(0)); dp[i][0] = i; }
+    for (var j = 0; j <= n; j++) dp[0][j] = j;
+    for (i = 1; i <= m; i++){
+      for (j = 1; j <= n; j++){
+        if (a[i-1] === b[j-1]) dp[i][j] = dp[i-1][j-1];
+        else dp[i][j] = 1 + Math.min(dp[i-1][j], dp[i][j-1], dp[i-1][j-1]);
+      }
+    }
+    return dp[m][n];
+  }
+
+  function wordSimilarity(target, heard){
+    var t = normalize(target), h = normalize(heard);
+    if (!h) return 0;
+    var dist = levenshtein(t, h);
+    var maxLen = Math.max(t.length, h.length, 1);
+    return 1 - dist / maxLen;
+  }
+
+  function wordsClose(a, b){
+    if (a === b) return true;
+    if (Math.min(a.length, b.length) <= 3) return a === b;
+    return levenshtein(a, b) <= 1;
+  }
+
+  function isWordMatch(target, heard, difficulty){
+    var sim = wordSimilarity(target, heard);
+    var threshold = difficulty === 'hard' ? 0.85 : difficulty === 'easy' ? 0.65 : 0.75;
+    return sim >= threshold;
+  }
+
+  function sentenceSimilarity(target, heard){
+    var t = normalize(target).split(' ').filter(Boolean);
+    var h = normalize(heard).split(' ').filter(Boolean);
+    if (!h.length || !t.length) return 0;
+    var hi = 0, matches = 0;
+    for (var k1 = 0; k1 < t.length; k1++){
+      var tw = t[k1];
+      var found = -1;
+      for (var k2 = hi; k2 < h.length; k2++){
+        if (wordsClose(tw, h[k2])) { found = k2; break; }
+      }
+      if (found >= 0) { matches++; hi = found + 1; }
+    }
+    return matches / t.length;
+  }
+
+  /* ---------------- List parsing ---------------- */
+  function parseList(raw, mode){
+    var lines = raw.split('\n').map(function(l){ return l.trim(); }).filter(Boolean);
+    if (mode === 'word'){
+      return lines.map(function(l){
+        var parts = l.split('|').map(function(s){ return s.trim(); });
+        return { type: 'word', text: parts[0], difficulty: (parts[1] || 'medium').toLowerCase() };
+      }).filter(function(it){ return it.text; });
+    }
+    return lines.filter(function(l){ return /^[QA]:/i.test(l); }).map(function(l){
+      var type = l[0].toUpperCase() === 'Q' ? 'question' : 'answer';
+      return { type: type, text: l.slice(2).trim() };
+    }).filter(function(it){ return it.text; });
+  }
+
+  function shuffle(arr){
+    var a = arr.slice();
+    for (var i = a.length - 1; i > 0; i--){
+      var j = Math.floor(Math.random() * (i + 1));
+      var tmp = a[i]; a[i] = a[j]; a[j] = tmp;
+    }
+    return a;
+  }
+
+  /* ---------------- Setup screen behaviour ---------------- */
+  // Tracks whether the textarea still holds one of the built-in samples
+  // (in which case switching modes is allowed to swap it) vs text the
+  // teacher/student has actually typed (which is never overwritten).
+  var listIsCustom = false;
+
+  function currentMode(){
+    var checked = document.querySelector('input[name=mode]:checked');
+    return checked ? checked.value : 'word';
+  }
+
+  function updateRoundLengthDisplay(){
+    var mode = currentMode();
+    var secs = mode === 'word' ? CONFIG.wordRoundSeconds : CONFIG.sentenceRoundSeconds;
+    roundLengthDisplay.textContent = secs + 's — fixed, same for every student';
+  }
+
+  function refreshSetupForMode(){
+    var mode = currentMode();
+    if (mode === 'word'){
+      listLabel.textContent = 'Word list';
+      listHint.textContent = 'One word per line. Add |easy, |medium, or |hard after a word to set difficulty (e.g. "necessary|hard"). Difficulty just affects how strict the pronunciation match is.';
+      if (!listIsCustom) listInput.value = SAMPLE_WORDS;
+    } else {
+      listLabel.textContent = 'Questions & answers';
+      listHint.textContent = 'One line per item, prefixed with "Q:" or "A:". Each question and each answer is its own read-aloud item.';
+      if (!listIsCustom) listInput.value = SAMPLE_SENTENCES;
+    }
+    updateRoundLengthDisplay();
+  }
+
+  modeRadios.forEach(function(r){ r.addEventListener('change', refreshSetupForMode); });
+  listInput.addEventListener('input', function(){
+    listIsCustom = (listInput.value !== SAMPLE_WORDS && listInput.value !== SAMPLE_SENTENCES);
+  });
+  refreshSetupForMode();
+
+  /* ---------------- Screen switching ---------------- */
+  function showScreen(name){
+    Object.keys(screens).forEach(function(k){
+      screens[k].classList.toggle('active', k === name);
+    });
+  }
+
+  /* ---------------- Pulse visual ---------------- */
+  var pulsePhase = 0;
+  function drawPulse(fraction){
+    // fraction: 0..1 of time remaining
+    var amp = 8 + fraction * 38;
+    var pts = [];
+    var steps = 40;
+    for (var i = 0; i <= steps; i++){
+      var x = (i / steps) * 1000;
+      var noise = Math.sin(pulsePhase + i * 0.9) * amp + Math.sin(pulsePhase * 0.4 + i * 0.35) * amp * 0.3;
+      var y = 60 + noise * (0.4 + 0.6 * fraction);
+      pts.push(x.toFixed(1) + ',' + y.toFixed(1));
+    }
+    pulsePath.setAttribute('d', 'M' + pts.join(' L'));
+    pulsePhase += 0.6;
+
+    var color = '#5FD068';
+    if (fraction < 0.2) color = '#FF5C5C';
+    else if (fraction < 0.5) color = '#F2B705';
+    pulsePath.setAttribute('stroke', color);
+  }
+
+  function spikeFx(){
+    pulseWrap.classList.remove('spike');
+    void pulseWrap.offsetWidth;
+    pulseWrap.classList.add('spike');
+  }
+
+  function formatClock(ms){
+    var s = Math.max(0, Math.ceil(ms / 1000));
+    var m = Math.floor(s / 60);
+    var r = s % 60;
+    return m + ':' + (r < 10 ? '0' : '') + r;
+  }
+
+  /* ---------------- Game loop ---------------- */
+  function startTickLoop(){
+    if (tickHandle) clearInterval(tickHandle);
+    tickHandle = setInterval(tick, 100);
+  }
+  function stopTickLoop(){
+    if (tickHandle) clearInterval(tickHandle);
+    tickHandle = null;
+  }
+
+  function tick(){
+    if (!state.running) return;
+    var now = performance.now();
+    if (now >= state.pausedUntil){
+      state.remainingMs -= 100;
+    }
+    var fraction = Math.max(0, state.remainingMs / state.totalMs);
+    drawPulse(fraction);
+    clockBadge.textContent = formatClock(state.remainingMs);
+    if (state.remainingMs <= 0){
+      endGame('time');
+    }
+  }
+
+  function loadCurrentItem(){
+    var item = state.list[state.index];
+    targetText.textContent = item.text;
+    targetText.className = 'target ' + (state.mode === 'word' ? 'mode-word' : 'mode-sentence');
+    progressText.textContent = (state.index + 1) + '/' + state.list.length;
+    clearedText.textContent = state.cleared;
+    setHeard('—', 'idle');
+  }
+
+  function setHeard(text, cls){
+    heardText.textContent = text;
+    heardText.className = 'heard-text ' + cls;
+  }
+
+  function onCorrect(){
+    state.cleared++;
+    var pauseMs = state.mode === 'word' ? 500 : 2500;
+    state.pausedUntil = performance.now() + pauseMs;
+    spikeFx();
+    state.index++;
+    clearedText.textContent = state.cleared;
+    if (state.index >= state.list.length){
+      endGame('cleared');
+      return;
+    }
+    loadCurrentItem();
+  }
+
+  function evaluateAttempt(transcript){
+    if (!state.running) return;
+    if (!transcript){
+      setHeard('No speech caught — hold the button and try again', 'miss');
+      return;
+    }
+    var item = state.list[state.index];
+    var pass;
+    if (state.mode === 'word'){
+      pass = isWordMatch(item.text, transcript, item.difficulty);
+    } else {
+      pass = sentenceSimilarity(item.text, transcript) >= 0.85;
+    }
+    setHeard(transcript, pass ? 'hit' : 'miss');
+    if (pass) onCorrect();
+  }
+
+  function endGame(reason){
+    state.running = false;
+    stopTickLoop();
+    if (state.listening) stopListening();
+    var total = state.list.length;
+    if (reason === 'cleared'){
+      endTitle.textContent = 'Cleared the whole list!';
+      endStats.textContent = total + ' / ' + total + ' — with ' + formatClock(state.remainingMs) + ' to spare';
+    } else {
+      endTitle.textContent = "Time's up";
+      endStats.textContent = 'You cleared ' + state.cleared + ' / ' + total;
+    }
+    showScreen('end');
+  }
+
+  /* ---------------- Mic / recognition handling ---------------- */
+  function startListening(){
+    if (!SR_SUPPORTED || state.listening || state.busy || !state.running) return;
+    state.listening = true;
+    lastFinalTranscript = '';
+    setHeard('Listening…', 'live');
+    micBtn.classList.add('active');
+    try { recognition.start(); } catch(e) { /* ignore if engine already mid-cycle */ }
+
+    var maxMs = state.mode === 'word' ? 7000 : 15000;
+    watchdogHandle = setTimeout(function(){
+      if (state.listening) stopListening();
+    }, maxMs);
+  }
+
+  function stopListening(){
+    if (!SR_SUPPORTED || !state.listening) return;
+    micBtn.classList.remove('active');
+    state.busy = true;
+    if (watchdogHandle) { clearTimeout(watchdogHandle); watchdogHandle = null; }
+    try { recognition.stop(); } catch(e) { state.listening = false; state.busy = false; }
+  }
+
+  if (SR_SUPPORTED){
+    recognition.onresult = function(e){
+      var interim = '', final = '';
+      for (var i = e.resultIndex; i < e.results.length; i++){
+        var tr = e.results[i][0].transcript;
+        if (e.results[i].isFinal) final += tr; else interim += tr;
+      }
+      if (final) lastFinalTranscript = final.trim();
+      if (state.running) setHeard(final || interim || '…', 'live');
+    };
+
+    recognition.onerror = function(e){
+      if (!state.running) return;
+      if (e.error === 'no-speech'){
+        setHeard('Didn\'t catch that — try again', 'miss');
+      } else if (e.error === 'not-allowed' || e.error === 'service-not-allowed'){
+        setHeard('Microphone blocked — check browser permissions', 'error');
+      } else if (e.error === 'network'){
+        setHeard('Network error — needs an internet connection', 'error');
+      } else {
+        setHeard('Recognition error (' + e.error + ')', 'error');
+      }
+    };
+
+    recognition.onend = function(){
+      state.listening = false;
+      state.busy = false;
+      evaluateAttempt(lastFinalTranscript);
+    };
+  }
+
+  micBtn.addEventListener('pointerdown', function(e){ e.preventDefault(); startListening(); });
+  ['pointerup','pointercancel','pointerleave'].forEach(function(evt){
+    micBtn.addEventListener(evt, function(e){ e.preventDefault(); stopListening(); });
+  });
+  micBtn.addEventListener('contextmenu', function(e){ e.preventDefault(); });
+
+  document.addEventListener('keydown', function(e){
+    if (e.code === 'Space' && screens.game.classList.contains('active')){
+      e.preventDefault();
+      startListening();
+    }
+  });
+  document.addEventListener('keyup', function(e){
+    if (e.code === 'Space' && screens.game.classList.contains('active')){
+      e.preventDefault();
+      stopListening();
+    }
+  });
+
+  /* ---------------- Start / quit / replay ---------------- */
+  function beginRound(list, mode, seconds){
+    state.mode = mode;
+    state.list = shuffleCheck.checked ? shuffle(list) : list;
+    state.totalMs = seconds * 1000;
+    state.remainingMs = state.totalMs;
+    state.index = 0;
+    state.cleared = 0;
+    state.pausedUntil = 0;
+    pulsePhase = 0;
+    modeLabel.textContent = mode === 'word' ? 'Words' : 'Sentences';
+    showScreen('game');
+    loadCurrentItem();
+    drawPulse(1);
+    clockBadge.textContent = formatClock(state.remainingMs);
+    state.running = true;
+    startTickLoop();
+  }
+
+  var lastRoundConfig = null;
+
+  startBtn.addEventListener('click', function(){
+    var mode = currentMode();
+    var list = parseList(listInput.value, mode);
+    if (!list.length){
+      alert('Add at least one item to the list first.');
+      return;
+    }
+    var seconds = mode === 'word' ? CONFIG.wordRoundSeconds : CONFIG.sentenceRoundSeconds;
+    lastRoundConfig = { list: list, mode: mode, seconds: seconds };
+    beginRound(list, mode, seconds);
+  });
+
+  quitBtn.addEventListener('click', function(){
+    if (state.running) endGame('time');
+    showScreen('setup');
+  });
+
+  playAgainBtn.addEventListener('click', function(){
+    if (lastRoundConfig) beginRound(lastRoundConfig.list, lastRoundConfig.mode, lastRoundConfig.seconds);
+  });
+
+  backToSetupBtn.addEventListener('click', function(){
+    showScreen('setup');
+  });
+
+})();
+</script>
+</body>
+</html>
