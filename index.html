@@ -5,6 +5,9 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#10172B">
 <title>Pulse Check — Pronunciation Race</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;800&family=Quicksand:wght@500;600;700&display=swap" rel="stylesheet">
 <style>
   :root{
     --bg:#10172B;
@@ -14,10 +17,29 @@
     --success:#5FD068;
     --danger:#FF5C5C;
     --warning:#F2B705;
+    --fun-1:#FF8A65;
+    --fun-2:#FFD166;
     --text:#F4F6FB;
     --text-muted:#8893B8;
     --mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
     --sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    --font-display: 'Baloo 2', var(--sans);
+    --font-soft: 'Quicksand', var(--sans);
+
+    /* ---- Pastel theme, scoped to the setup screen only ---- */
+    --setup-bg:#FFF8F0;
+    --setup-surface:#FFFFFF;
+    --setup-border:#EFE6FB;
+    --setup-text:#3B3552;
+    --setup-text-muted:#928BAA;
+    --setup-accent:#6FCBC0;
+    --setup-accent-deep:#2B9C8F;
+    --setup-peach:#FFE5D4;
+    --setup-mint:#DFF5EC;
+    --setup-butter:#FFF1C9;
+    --setup-lavender:#E9E2FF;
+    --setup-pink:#FFE0EC;
+    --setup-sky:#DCEEFF;
   }
   *{box-sizing:border-box;}
   html,body{margin:0;height:100%;background:var(--bg);color:var(--text);font-family:var(--sans);overscroll-behavior:none;}
@@ -27,27 +49,77 @@
   .screen{display:none;flex:1;flex-direction:column;padding:20px;max-width:720px;width:100%;margin:0 auto;}
   .screen.active{display:flex;}
 
-  /* ---------- Setup ---------- */
-  .title{font-size:clamp(28px,6vw,40px);font-weight:800;letter-spacing:-0.02em;margin:8px 0 2px;}
-  .tagline{color:var(--text-muted);margin:0 0 24px;font-size:15px;}
-  .field{margin-bottom:20px;}
-  .field label{display:block;font-size:13px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.04em;margin-bottom:8px;}
-  .toggle-row{display:flex;gap:10px;}
-  .toggle-row label{flex:1;}
-  .toggle-btn{display:block;width:100%;text-align:center;padding:14px 10px;border-radius:12px;border:2px solid var(--surface-2);background:var(--surface);cursor:pointer;font-weight:700;font-size:14px;transition:border-color .15s, background .15s;}
+  /* ---------- Setup (pastel, full-bleed) ---------- */
+  .screen-setup{max-width:none;width:100%;padding:0;margin:0;background:var(--setup-bg);color:var(--setup-text);font-family:var(--font-soft);position:relative;overflow:hidden;}
+  .setup-inner{max-width:720px;width:100%;margin:0 auto;padding:24px 20px 36px;position:relative;z-index:1;}
+  .screen-setup::before, .screen-setup::after{content:'';position:absolute;border-radius:50%;filter:blur(50px);z-index:0;pointer-events:none;}
+  .screen-setup::before{width:240px;height:240px;background:var(--setup-butter);opacity:.6;top:-70px;right:-70px;}
+  .screen-setup::after{width:280px;height:280px;background:var(--setup-sky);opacity:.6;bottom:-90px;left:-90px;}
+
+  .sound-bars{display:flex;align-items:flex-end;gap:5px;height:30px;margin-bottom:6px;}
+  .sound-bars span{display:block;width:6px;border-radius:4px;transform-origin:bottom;animation:barBounce 1.1s ease-in-out infinite;}
+  .sound-bars span:nth-child(1){background:#FF9F7D;animation-delay:0s;height:14px;}
+  .sound-bars span:nth-child(2){background:var(--setup-accent-deep);animation-delay:.12s;height:26px;}
+  .sound-bars span:nth-child(3){background:#FFC94D;animation-delay:.24s;height:18px;}
+  .sound-bars span:nth-child(4){background:#7BB8E8;animation-delay:.36s;height:30px;}
+  .sound-bars span:nth-child(5){background:#FF9F7D;animation-delay:.24s;height:20px;}
+  .sound-bars span:nth-child(6){background:var(--setup-accent-deep);animation-delay:.12s;height:28px;}
+  .sound-bars span:nth-child(7){background:#FFC94D;animation-delay:0s;height:15px;}
+  @keyframes barBounce{0%,100%{transform:scaleY(.35);}50%{transform:scaleY(1);}}
+
+  .title{font-family:var(--font-display);font-size:clamp(36px,9vw,52px);font-weight:800;letter-spacing:0;margin:4px 0 6px;color:var(--setup-text);}
+  .title-pop{background:linear-gradient(90deg, #FF6F61, #FF9F7D);-webkit-background-clip:text;background-clip:text;color:transparent;}
+  .tagline{color:var(--setup-text-muted);margin:0 0 26px;font-size:16px;font-weight:600;}
+
+  .field{margin-bottom:22px;}
+  .field-label{display:block;font-size:15px;font-weight:700;color:var(--setup-text);margin-bottom:10px;}
+  .field-label-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;}
+  .field-label-row .field-label{margin-bottom:0;}
+  .edit-toggle{background:none;border:none;color:var(--setup-accent-deep);font-weight:700;font-size:13px;cursor:pointer;padding:5px 10px;border-radius:8px;font-family:inherit;}
+  .edit-toggle:hover{background:var(--setup-surface);}
+
+  /* Word bubbles — the primary, friendly view of the list */
+  .bubble-grid{display:flex;flex-wrap:wrap;gap:9px;}
+  .bubble-empty{color:var(--setup-text-muted);font-size:14px;padding:8px 2px;}
+  .word-bubble{display:inline-flex;align-items:center;gap:5px;padding:10px 15px;border-radius:999px;font-weight:700;font-size:14.5px;color:var(--setup-text);box-shadow:0 2px 0 rgba(59,53,82,.06);}
+  .bubble-stars{font-size:10px;opacity:.65;}
+  .bubble-tag{font-size:11px;font-weight:800;opacity:.5;margin-right:1px;}
+  .bubble-0{background:var(--setup-peach);}
+  .bubble-1{background:var(--setup-mint);}
+  .bubble-2{background:var(--setup-butter);}
+  .bubble-3{background:var(--setup-lavender);}
+  .bubble-4{background:var(--setup-pink);}
+  .bubble-5{background:var(--setup-sky);}
+
+  .edit-list-panel{margin-top:12px;}
+  textarea{width:100%;min-height:150px;background:var(--setup-surface);border:2px solid var(--setup-border);border-radius:12px;color:var(--setup-text);padding:14px;font-family:var(--mono);font-size:14px;line-height:1.5;resize:vertical;}
+  textarea:focus{outline:none;border-color:var(--setup-accent-deep);}
+  .hint-text{color:var(--setup-text-muted);font-size:12px;margin-top:6px;line-height:1.5;}
+
+  .mode-cards{display:flex;gap:12px;}
+  .mode-cards label{flex:1;}
+  .mode-card-inner{display:flex;flex-direction:column;align-items:center;gap:3px;padding:18px 10px;border-radius:18px;border:2.5px solid var(--setup-border);background:var(--setup-surface);cursor:pointer;transition:border-color .15s, background .15s, transform .15s, box-shadow .15s;}
+  .mode-icon{font-size:30px;line-height:1;}
+  .mode-name{font-weight:800;font-size:16px;color:var(--setup-text);}
+  .mode-sub{font-size:12px;color:var(--setup-text-muted);font-weight:600;}
   input[type=radio]{display:none;}
-  input[type=radio]:checked + .toggle-btn{border-color:var(--accent);background:var(--surface-2);color:var(--accent);}
-  textarea{width:100%;min-height:160px;background:var(--surface);border:2px solid var(--surface-2);border-radius:12px;color:var(--text);padding:14px;font-family:var(--mono);font-size:14px;line-height:1.5;resize:vertical;}
-  textarea:focus{outline:none;border-color:var(--accent);}
-  .hint-text{color:var(--text-muted);font-size:12px;margin-top:6px;line-height:1.5;}
-  .num-row{display:flex;align-items:center;gap:10px;}
-  .round-length-display{font-family:var(--mono);font-size:15px;color:var(--text-muted);padding:10px 0;}
-  .check-row{display:flex;align-items:center;gap:10px;color:var(--text-muted);font-size:14px;}
-  .check-row input{width:18px;height:18px;accent-color:var(--accent);}
-  .start-btn{margin-top:8px;padding:18px;border-radius:14px;border:none;background:var(--accent);color:#0A1020;font-weight:800;font-size:17px;cursor:pointer;}
-  .start-btn:disabled{background:var(--surface-2);color:var(--text-muted);cursor:not-allowed;}
-  .start-btn:not(:disabled):active{transform:scale(0.98);}
-  .warn-banner{background:rgba(255,92,92,.12);border:1px solid var(--danger);color:#FFD3D3;padding:12px 14px;border-radius:10px;font-size:13px;margin-bottom:18px;line-height:1.5;}
+  input[type=radio]:checked + .mode-card-inner{border-color:var(--setup-accent-deep);background:var(--setup-mint);box-shadow:0 4px 14px rgba(43,156,143,.18);transform:translateY(-2px);}
+  input[type=radio]:checked + .mode-card-inner .mode-name{color:var(--setup-accent-deep);}
+
+  .info-pills{display:flex;gap:10px;flex-wrap:wrap;}
+  .info-pill{display:flex;align-items:center;gap:8px;background:var(--setup-surface);border:2px solid var(--setup-border);border-radius:999px;padding:10px 16px;font-size:13px;color:var(--setup-text-muted);font-weight:700;}
+  .info-pill-icon{font-size:16px;}
+  label.info-pill{cursor:pointer;}
+  label.info-pill input{width:16px;height:16px;accent-color:var(--setup-accent-deep);margin:0;}
+
+  .start-btn{width:100%;margin-top:14px;padding:24px;border-radius:20px;border:none;background:linear-gradient(135deg, #FF9F7D, #FFD166);color:#5C3A1E;font-family:var(--font-display);font-weight:800;font-size:22px;cursor:pointer;box-shadow:0 8px 0 rgba(92,58,30,.15);transition:transform .1s, box-shadow .1s;animation:startGlow 2.4s ease-in-out infinite;}
+  .start-btn:disabled{background:var(--setup-border);color:var(--setup-text-muted);box-shadow:none;cursor:not-allowed;animation:none;}
+  .start-btn:not(:disabled):active{transform:translateY(5px);box-shadow:0 3px 0 rgba(92,58,30,.15);}
+  @keyframes startGlow{
+    0%,100%{box-shadow:0 8px 0 rgba(92,58,30,.15), 0 0 0 0 rgba(255,159,125,.5);}
+    50%{box-shadow:0 8px 0 rgba(92,58,30,.15), 0 0 0 11px rgba(255,159,125,0);}
+  }
+  .warn-banner{background:#FFF0EC;border:1.5px solid #FF9F7D;color:#9A3B22;padding:12px 14px;border-radius:12px;font-size:13px;margin-bottom:18px;line-height:1.5;font-weight:600;}
 
   /* ---------- Game ---------- */
   #game{padding-top:14px;}
@@ -63,9 +135,41 @@
   .clock-badge{position:absolute;top:8px;right:10px;font-family:var(--mono);font-size:13px;background:rgba(0,0,0,.35);padding:3px 9px;border-radius:8px;}
 
   .stage{flex:1;display:flex;align-items:center;justify-content:center;text-align:center;padding:10px 4px;}
-  .target{font-weight:800;letter-spacing:-0.01em;}
-  .target.mode-word{font-size:clamp(34px,9vw,68px);}
-  .target.mode-sentence{font-size:clamp(20px,5vw,32px);line-height:1.4;max-width:95%;}
+  .target{
+    font-weight:800;letter-spacing:-0.01em;color:transparent;
+    -webkit-text-stroke:2.5px var(--text-muted);
+    transition:color .35s ease, -webkit-text-stroke-color .4s ease, text-shadow .35s ease;
+  }
+  .target.mode-word{font-size:clamp(34px,9vw,68px);-webkit-text-stroke-width:2.5px;}
+  .target.mode-sentence{font-size:clamp(20px,5vw,32px);line-height:1.4;max-width:95%;-webkit-text-stroke-width:1.5px;}
+
+  /* Ambient "I'm open and listening" cue — loops the whole time the button is held */
+  .target.listening{animation:targetBreathe 1.6s ease-in-out infinite;}
+  @keyframes targetBreathe{
+    0%,100%{-webkit-text-stroke-color:var(--text-muted);}
+    50%{-webkit-text-stroke-color:var(--accent);}
+  }
+  /* Sharper one-shot flicker, retriggered each time a speech chunk actually arrives */
+  .target.voice-pulse{animation:targetVoicePulse .25s ease;}
+  @keyframes targetVoicePulse{
+    0%{transform:scale(1);text-shadow:0 0 0 rgba(45,212,196,0);}
+    50%{transform:scale(1.035);text-shadow:0 0 26px rgba(45,212,196,.5);}
+    100%{transform:scale(1);text-shadow:0 0 0 rgba(45,212,196,0);}
+  }
+  .target.hit{
+    color:var(--success);-webkit-text-stroke-color:var(--success);
+    text-shadow:0 0 30px rgba(95,208,104,.55);
+  }
+  .target.miss{
+    color:var(--danger);-webkit-text-stroke-color:var(--danger);
+    text-shadow:0 0 30px rgba(255,92,92,.45);
+    animation:targetMissShake .35s ease;
+  }
+  @keyframes targetMissShake{
+    0%,100%{transform:translateX(0);}
+    25%{transform:translateX(-6px);}
+    75%{transform:translateX(6px);}
+  }
 
   .heard-row{text-align:center;margin-bottom:18px;min-height:26px;}
   .heard-label{color:var(--text-muted);font-size:12px;text-transform:uppercase;letter-spacing:.05em;margin-right:6px;}
@@ -96,6 +200,11 @@
     .pulse-wrap.spike{animation:none;}
     .mic-btn{transition:none;}
     .mic-btn.checking{animation:none;}
+    .target.listening{animation:none;}
+    .target.voice-pulse{animation:none;}
+    .target.miss{animation:none;}
+    .sound-bars span{animation:none;transform:scaleY(.7);}
+    .start-btn{animation:none;}
   }
 </style>
 </head>
@@ -103,42 +212,66 @@
 <div id="app">
 
   <!-- ===================== SETUP SCREEN ===================== -->
-  <section id="setup" class="screen active">
-    <h1 class="title">Pulse Check</h1>
-    <p class="tagline">Say it clearly enough, and the clock holds its breath.</p>
+  <section id="setup" class="screen screen-setup active">
+   <div class="setup-inner">
+    <div class="sound-bars" aria-hidden="true"><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div>
+    <h1 class="title">Pulse <span class="title-pop">Check</span></h1>
+    <p class="tagline">Say it loud, say it clear — keep the clock alive! 🎤</p>
 
     <div id="unsupportedWarning" class="warn-banner" style="display:none;">
-      This browser doesn't support speech recognition. Use Chrome, Edge, or Safari (14.5+ on iPhone/iPad). Firefox is not supported.
+      ⚠️ This browser doesn't support speech recognition. Use Chrome, Edge, or Safari (14.5+ on iPhone/iPad). Firefox is not supported.
     </div>
 
     <div class="field">
-      <label>Practice mode</label>
-      <div class="toggle-row">
-        <label><input type="radio" name="mode" value="word" checked><span class="toggle-btn">Words</span></label>
-        <label><input type="radio" name="mode" value="sentence"><span class="toggle-btn">Sentences (read-aloud)</span></label>
+      <label class="field-label">🎯 Pick your challenge</label>
+      <div class="mode-cards">
+        <label>
+          <input type="radio" name="mode" value="word" checked>
+          <span class="mode-card-inner">
+            <span class="mode-icon">🔤</span>
+            <span class="mode-name">Words</span>
+            <span class="mode-sub">Quick vocab sprint</span>
+          </span>
+        </label>
+        <label>
+          <input type="radio" name="mode" value="sentence">
+          <span class="mode-card-inner">
+            <span class="mode-icon">💬</span>
+            <span class="mode-name">Sentences</span>
+            <span class="mode-sub">Read it out loud</span>
+          </span>
+        </label>
       </div>
     </div>
 
     <div class="field">
-      <label id="listLabel">Word list</label>
-      <textarea id="listInput" spellcheck="false"></textarea>
-      <div class="hint-text" id="listHint"></div>
+      <div class="field-label-row">
+        <label class="field-label" id="listLabel">📝 Word list</label>
+        <button type="button" id="editListToggle" class="edit-toggle">✏️ Edit</button>
+      </div>
+      <div id="bubbleGrid" class="bubble-grid"></div>
+      <div id="editListPanel" class="edit-list-panel" style="display:none;">
+        <textarea id="listInput" spellcheck="false"></textarea>
+        <div class="hint-text" id="listHint"></div>
+      </div>
     </div>
 
     <div class="field">
-      <div class="num-row">
-        <div>
-          <label style="margin-bottom:4px;">Round length</label>
-          <div id="roundLengthDisplay" class="round-length-display"></div>
+      <div class="info-pills">
+        <div class="info-pill">
+          <span class="info-pill-icon">⏱️</span>
+          <span id="roundLengthDisplay"></span>
         </div>
-        <div class="check-row" style="margin-top:18px;">
+        <label class="info-pill">
           <input type="checkbox" id="shuffleCheck" checked>
-          <label style="margin:0;text-transform:none;font-size:14px;color:var(--text-muted);">Shuffle order</label>
-        </div>
+          <span class="info-pill-icon">🔀</span>
+          <span>Shuffle order</span>
+        </label>
       </div>
     </div>
 
-    <button id="startBtn" class="start-btn">Start round</button>
+    <button id="startBtn" class="start-btn">Let's go! 🚀</button>
+   </div>
   </section>
 
   <!-- ===================== GAME SCREEN ===================== -->
@@ -199,10 +332,7 @@
      ============================================================ */
   var CONFIG = {
     wordRoundSeconds: 75,       // round length when "Words" mode is selected
-    sentenceRoundSeconds: 150,  // round length when "Sentences" mode is selected
-    releaseBufferMs: 300        // grace period after releasing the mic button
-                                 // before recognition actually stops — avoids
-                                 // cutting off the tail end of a word
+    sentenceRoundSeconds: 150   // round length when "Sentences" mode is selected
   };
 
   /* ---------------- Sample content ---------------- */
@@ -235,6 +365,9 @@
   var listInput = document.getElementById('listInput');
   var listLabel = document.getElementById('listLabel');
   var listHint = document.getElementById('listHint');
+  var bubbleGrid = document.getElementById('bubbleGrid');
+  var editListToggle = document.getElementById('editListToggle');
+  var editListPanel = document.getElementById('editListPanel');
   var roundLengthDisplay = document.getElementById('roundLengthDisplay');
   var shuffleCheck = document.getElementById('shuffleCheck');
   var startBtn = document.getElementById('startBtn');
@@ -368,6 +501,34 @@
     }).filter(function(it){ return it.text; });
   }
 
+  function escapeHtml(s){
+    return String(s).replace(/[&<>"']/g, function(c){
+      return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];
+    });
+  }
+
+  // Renders the current list as a grid of colorful bubbles instead of a
+  // plain textarea — this is what students actually see; the textarea
+  // becomes an optional "Edit" panel for whoever is configuring the list.
+  function renderBubbles(){
+    var mode = currentMode();
+    var list = parseList(listInput.value, mode);
+    if (!list.length){
+      bubbleGrid.innerHTML = '<div class="bubble-empty">Add some words above to see them here ✨</div>';
+      return;
+    }
+    bubbleGrid.innerHTML = list.map(function(item, i){
+      if (mode === 'word'){
+        var stars = item.difficulty === 'hard' ? '⭐⭐⭐' : item.difficulty === 'easy' ? '⭐' : '⭐⭐';
+        return '<span class="word-bubble bubble-' + (i % 6) + '">' + escapeHtml(item.text) +
+               '<span class="bubble-stars">' + stars + '</span></span>';
+      }
+      var isQ = item.type === 'question';
+      return '<span class="word-bubble ' + (isQ ? 'bubble-5' : 'bubble-1') + '">' +
+             '<span class="bubble-tag">' + (isQ ? 'Q' : 'A') + '</span>' + escapeHtml(item.text) + '</span>';
+    }).join('');
+  }
+
   function shuffle(arr){
     var a = arr.slice();
     for (var i = a.length - 1; i > 0; i--){
@@ -391,26 +552,33 @@
   function updateRoundLengthDisplay(){
     var mode = currentMode();
     var secs = mode === 'word' ? CONFIG.wordRoundSeconds : CONFIG.sentenceRoundSeconds;
-    roundLengthDisplay.textContent = secs + 's — fixed, same for every student';
+    roundLengthDisplay.textContent = secs + 's — same for everyone';
   }
 
   function refreshSetupForMode(){
     var mode = currentMode();
     if (mode === 'word'){
-      listLabel.textContent = 'Word list';
+      listLabel.textContent = '📝 Word list';
       listHint.textContent = 'One word per line. Add |easy, |medium, or |hard after a word to set difficulty (e.g. "necessary|hard"). Difficulty just affects how strict the pronunciation match is.';
       if (!listIsCustom) listInput.value = SAMPLE_WORDS;
     } else {
-      listLabel.textContent = 'Questions & answers';
+      listLabel.textContent = '🗨️ Questions & answers';
       listHint.textContent = 'One line per item, prefixed with "Q:" or "A:". Each question and each answer is its own read-aloud item.';
       if (!listIsCustom) listInput.value = SAMPLE_SENTENCES;
     }
     updateRoundLengthDisplay();
+    renderBubbles();
   }
 
   modeRadios.forEach(function(r){ r.addEventListener('change', refreshSetupForMode); });
   listInput.addEventListener('input', function(){
     listIsCustom = (listInput.value !== SAMPLE_WORDS && listInput.value !== SAMPLE_SENTENCES);
+    renderBubbles();
+  });
+  editListToggle.addEventListener('click', function(){
+    var isOpen = editListPanel.style.display !== 'none';
+    editListPanel.style.display = isOpen ? 'none' : 'block';
+    editListToggle.textContent = isOpen ? '✏️ Edit' : '✅ Done';
   });
   refreshSetupForMode();
 
@@ -499,13 +667,20 @@
     var pauseMs = state.mode === 'word' ? 500 : 2500;
     state.pausedUntil = performance.now() + pauseMs;
     spikeFx();
-    state.index++;
+    targetText.classList.remove('listening', 'voice-pulse', 'miss');
+    targetText.classList.add('hit');
     clearedText.textContent = state.cleared;
-    if (state.index >= state.list.length){
-      endGame('cleared');
-      return;
-    }
-    loadCurrentItem();
+    // Hold the green fill visibly for the same window the timer is paused,
+    // then swap to the next item right as the timer resumes draining.
+    setTimeout(function(){
+      if (!state.running) return;
+      state.index++;
+      if (state.index >= state.list.length){
+        endGame('cleared');
+        return;
+      }
+      loadCurrentItem();
+    }, pauseMs);
   }
 
   function evaluateAttempt(transcript){
@@ -522,7 +697,15 @@
       pass = sentenceSimilarity(item.text, transcript) >= 0.85;
     }
     setHeard(transcript, pass ? 'hit' : 'miss');
-    if (pass) onCorrect();
+    if (pass){
+      onCorrect();
+    } else {
+      targetText.classList.remove('listening', 'voice-pulse');
+      targetText.classList.add('miss');
+      setTimeout(function(){
+        targetText.classList.remove('miss');
+      }, 450);
+    }
   }
 
   function endGame(reason){
@@ -541,7 +724,13 @@
   }
 
   /* ---------------- Mic / recognition handling ---------------- */
-  var releaseTimer = null;
+  function pulseTargetVoice(){
+    // Retriggers the CSS animation each time a speech chunk actually
+    // arrives — removing then re-adding the class forces a restart.
+    targetText.classList.remove('voice-pulse');
+    void targetText.offsetWidth; // force reflow
+    targetText.classList.add('voice-pulse');
+  }
 
   function startListening(){
     if (!SR_SUPPORTED || state.listening || state.busy || !state.running) return;
@@ -550,30 +739,31 @@
     setHeard('Listening…', 'live');
     micBtn.classList.remove('checking');
     micBtn.classList.add('active');
+    targetText.classList.remove('hit', 'miss');
+    targetText.classList.add('listening');
     try { recognition.start(); } catch(e) { /* ignore if engine already mid-cycle */ }
 
-    var maxMs = state.mode === 'word' ? 7000 : 15000;
+    // Safety net only — if the engine somehow never finishes on its own
+    // (e.g. a network hiccup), force it to stop after a generous timeout
+    // so the game can't get permanently stuck. Should rarely if ever fire.
+    var maxMs = state.mode === 'word' ? 8000 : 18000;
     watchdogHandle = setTimeout(function(){
-      if (state.listening) stopListening();
+      if (state.listening) { try { recognition.stop(); } catch(e){} }
     }, maxMs);
   }
 
   function stopListening(){
+    // Called on button release. This deliberately does NOT force the
+    // recognizer to stop — it keeps listening and finishes on its own
+    // once it detects the student has stopped talking, so the tail end
+    // of a word is never cut off just because a finger lifted. Release
+    // only changes what the button looks like, not what the engine does.
     if (!SR_SUPPORTED || !state.listening || state.busy) return;
-    // Released — but don't tell the engine to stop just yet. A short
-    // buffer here gives the tail end of the word (and any network lag)
-    // time to actually be captured, instead of getting cut off right at
-    // the moment of release. The button shows a distinct "checking" look
-    // for this whole window so it's never mistaken for "ready to press".
     micBtn.classList.remove('active');
     micBtn.classList.add('checking');
+    targetText.classList.remove('listening');
     setHeard('Checking…', 'live');
     state.busy = true;
-    if (watchdogHandle) { clearTimeout(watchdogHandle); watchdogHandle = null; }
-    releaseTimer = setTimeout(function(){
-      try { recognition.stop(); }
-      catch(e) { state.listening = false; state.busy = false; micBtn.classList.remove('checking'); }
-    }, CONFIG.releaseBufferMs);
   }
 
   if (SR_SUPPORTED){
@@ -584,7 +774,10 @@
         if (e.results[i].isFinal) final += tr; else interim += tr;
       }
       if (final) lastFinalTranscript = final.trim();
-      if (state.running && !state.busy) setHeard(final || interim || '…', 'live');
+      if (state.running && !state.busy){
+        setHeard(final || interim || '…', 'live');
+        pulseTargetVoice();
+      }
     };
 
     recognition.onerror = function(e){
@@ -604,6 +797,7 @@
       state.listening = false;
       state.busy = false;
       micBtn.classList.remove('checking');
+      if (watchdogHandle) { clearTimeout(watchdogHandle); watchdogHandle = null; }
       evaluateAttempt(lastFinalTranscript);
     };
   }
